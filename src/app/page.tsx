@@ -1,103 +1,319 @@
-import Image from "next/image";
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+import {
+  ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  LineChart, Line,
+} from 'recharts';
+
+type Stat = { min: number; max: number; mean: number };
+type Config = {
+  W_columns: string[];
+  T_name: string;
+  stats: Record<string, Stat>;
+  class_labels: string[];
+};
+
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE || 'http://127.0.0.1:8000';
+
+type PredictPayload = { W: Record<string, number>; T: number };
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  // -------------------- HOOKS (top-level, ordre fixe) --------------------
+  const [cfg, setCfg] = useState<Config | null>(null);
+  const [loadingCfg, setLoadingCfg] = useState(true);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  // Entrées utilisateur
+  const [W, setW] = useState<Record<string, number>>({});
+  const [T, setT] = useState<number>(0);
+  const [whatIfPct, setWhatIfPct] = useState<number>(-20);
+
+  // Résultats
+  const [probaCur, setProbaCur] = useState<number[] | null>(null);
+  const [probaCf, setProbaCf] = useState<number[] | null>(null);
+  const [cate, setCate] = useState<number | null>(null);
+  const [yHat, setYHat] = useState<number | null>(null);
+
+  // Erreurs réseau
+  const [err, setErr] = useState<string | null>(null);
+
+  //Légende bon, moyen, mauvais
+  // juste après const labels = cfg?.class_labels ?? ['0', '1', '2'];
+const legendMapping: Record<string, string> = {
+  "0": "Bon",
+  "1": "Mauvais",
+  "2": "Moyen",
+};
+
+
+  // -------------------- CHARGEMENT CONFIG --------------------
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLoadingCfg(true);
+        const r = await fetch(`${API_BASE}/config`);
+        if (!r.ok) throw new Error(`/config HTTP ${r.status}`);
+        const c: Config = await r.json();
+        if (!mounted) return;
+
+        setCfg(c);
+
+        // initialise W & T à leurs moyennes
+        const w0: Record<string, number> = {};
+        c.W_columns.forEach((k) => (w0[k] = c.stats[k].mean));
+        setW(w0);
+        setT(c.stats[c.T_name].mean);
+
+        setErr(null);
+      } catch (e: any) {
+        setErr(e?.message || 'Erreur de config');
+      } finally {
+        if (mounted) setLoadingCfg(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // -------------------- ACTIONS --------------------
+  async function callPredict() {
+    if (!cfg) return;
+    try {
+      const payload: PredictPayload = { W, T };
+      const r = await fetch(`${API_BASE}/predict`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!r.ok) throw new Error(`/predict HTTP ${r.status}`);
+      const data = await r.json();
+      // backend (version classifier) renvoie: class_pred, proba, cate, ...
+      setProbaCur(data.proba ?? null);
+      setCate(typeof data.cate === 'number' ? data.cate : null);
+      // y_hat: on peut approximer par proba argmax si besoin
+      setYHat(
+        Array.isArray(data.proba)
+          ? data.proba.indexOf(Math.max(...data.proba))
+          : null
+      );
+      setErr(null);
+    } catch (e: any) {
+      setErr(e?.message || 'Erreur /predict');
+    }
+  }
+
+  async function callWhatIf() {
+    if (!cfg) return;
+    try {
+      const payload: PredictPayload = { W, T };
+      const r = await fetch(`${API_BASE}/whatif?pct=${whatIfPct}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!r.ok) throw new Error(`/whatif HTTP ${r.status}`);
+      const data = await r.json();
+
+      // current
+      if (Array.isArray(data.current?.proba)) {
+        setProbaCur(data.current.proba);
+      }
+      if (typeof data.current?.cate === 'number') {
+        setCate(data.current.cate);
+      }
+
+      // counterfactual
+      setProbaCf(
+        Array.isArray(data.counterfactual?.proba)
+          ? data.counterfactual.proba
+          : null
+      );
+
+      setErr(null);
+    } catch (e: any) {
+      setErr(e?.message || 'Erreur /whatif');
+    }
+  }
+
+  // -------------------- DERIVÉS (memo) --------------------
+  const labels = cfg?.class_labels ?? ['0', '1', '2'];
+  const chartData = useMemo(() => {
+    // ⚠ retourne toujours une valeur (jamais de hook conditionnel)
+    const cur = probaCur ?? [];
+    const cf = probaCf ?? [];
+    const rows: { label: string; courant?: number; contrefactuel?: number }[] =
+      [];
+
+    const n = Math.max(labels.length, cur.length, cf.length);
+    for (let i = 0; i < n; i++) {
+      rows.push({
+        label: labels[i] ?? `C${i}`,
+        courant: cur[i],
+        contrefactuel: cf[i],
+      });
+    }
+    return rows;
+  }, [labels, probaCur, probaCf]);
+
+  // -------------------- UI --------------------
+  if (loadingCfg) return <main>Chargement config…</main>;
+  if (!cfg) return <main>Impossible de charger la configuration.</main>;
+
+  return (
+    <main className="p-6 space-y-6">
+      <h1 className="text-2xl font-semibold">Air Quality — Simulateur causal</h1>
+
+      {err && (
+        <div className="rounded border border-red-300 bg-red-50 text-red-700 p-3">
+          {err}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+      )}
+
+      {/* Sliders contexte */}
+      <section className="rounded-xl border p-4">
+        <h2 className="font-medium mb-3">Contexte (W)</h2>
+        <div className="grid md:grid-cols-2 gap-3">
+          {cfg.W_columns.map((k) => {
+            const s = cfg.stats[k];
+            const v = W[k];
+            return (
+              <div key={k} className="flex flex-col">
+                <label className="text-sm mb-1">
+                  {k}{' '}
+                  <span className="text-xs text-gray-500">
+                    (min {s.min.toFixed(1)} | max {s.max.toFixed(1)})
+                  </span>
+                </label>
+                <input
+                  type="range"
+                  min={s.min}
+                  max={s.max}
+                  step="0.1"
+                  value={v}
+                  onChange={(e) =>
+                    setW((prev) => ({ ...prev, [k]: +e.target.value }))
+                  }
+                />
+                <span className="text-xs text-gray-500 mt-1">{v?.toFixed(2)}</span>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Traitement NO2 */}
+      <section className="rounded-xl border p-4">
+        <h2 className="font-medium mb-3">{cfg.T_name} (traitement)</h2>
+        <div className="flex items-center gap-4">
+          <input
+            className="w-full"
+            type="range"
+            min={cfg.stats[cfg.T_name].min}
+            max={cfg.stats[cfg.T_name].max}
+            step="0.1"
+            value={T}
+            onChange={(e) => setT(+e.target.value)}
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+          <span className="text-sm text-gray-600">{T.toFixed(2)}</span>
+        </div>
+      </section>
+
+      {/* Actions */}
+      <section className="rounded-xl border p-4 flex items-center gap-4">
+        <button
+          onClick={callPredict}
+          className="px-4 py-2 rounded-lg bg-blue-600 text-white"
         >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
+          Prédire
+        </button>
+
+        <div className="flex items-center gap-3">
+          <span>What-if (NO₂ %):</span>
+          <input
+            type="range"
+            min={-100}
+            max={100}
+            step={1}
+            value={whatIfPct}
+            onChange={(e) => setWhatIfPct(+e.target.value)}
           />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+          <span className="w-12 text-right">{whatIfPct}%</span>
+        </div>
+
+        <button
+          onClick={callWhatIf}
+          className="px-4 py-2 rounded-lg bg-green-600 text-white"
         >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+          Simuler
+        </button>
+      </section>
+
+      {/* Résultats */}
+      <section className="rounded-xl border p-4">
+        <h2 className="font-medium mb-3">Résultat prédiction</h2>
+        <div className="text-sm">
+          <div>
+            Qualité prédite (ŷ) :{" "}
+            {yHat !== null
+              ? `${legendMapping[String(yHat)] ?? yHat} (classe ${yHat})`
+              : "-"}
+          </div>
+
+          <div>
+            Effet causal marginal (CATE) :{' '}
+            {cate !== null ? cate.toFixed(4) : '/'} / unité de NO₂
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-xl border p-4">
+        <h2 className="font-medium mb-3">Légende des classes</h2>
+        <ul className="list-disc pl-5 text-sm text-gray-700" style={{listStyleType: 'none'}}>
+          <li><b>0</b> = Bon (bonne qualité de l’air)</li>
+          <li><b>1</b> = Mauvais (mauvaise qualité de l’air)</li>
+          <li><b>2</b> = Moyen (qualité moyenne de l'air)</li>
+        </ul>
+      </section>
+
+
+      {/* Graphiques */}
+      <section className="rounded-xl border p-4">
+        <h2 className="font-medium mb-3">Probabilités par classe</h2>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="label" tickFormatter={(v) => legendMapping[v] ?? v} />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="courant" name="Courant" />
+              <Bar dataKey="contrefactuel" name="Contrefactuel" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+
+      <section className="rounded-xl border p-4">
+        <h2 className="font-medium mb-3">Courbes courant vs contrefactuel</h2>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="label" />
+              <YAxis domain={[0, 1]} />
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="courant" name="Courant" />
+              <Line type="monotone" dataKey="contrefactuel" name="Contrefactuel" />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+    </main>
   );
 }

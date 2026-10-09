@@ -20,6 +20,10 @@ const API_BASE =
 
 type PredictPayload = { W: Record<string, number>; T: number };
 
+function errorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export default function Home() {
   // -------------------- HOOKS (top-level, ordre fixe) --------------------
   const [cfg, setCfg] = useState<Config | null>(null);
@@ -68,8 +72,8 @@ const legendMapping: Record<string, string> = {
         setT(c.stats[c.T_name].mean);
 
         setErr(null);
-      } catch (e: any) {
-        setErr(e?.message || 'Erreur de config');
+      } catch (e: unknown) {
+        setErr(errorMessage(e, 'Erreur de config'));
       } finally {
         if (mounted) setLoadingCfg(false);
       }
@@ -101,8 +105,8 @@ const legendMapping: Record<string, string> = {
           : null
       );
       setErr(null);
-    } catch (e: any) {
-      setErr(e?.message || 'Erreur /predict');
+    } catch (e: unknown) {
+      setErr(errorMessage(e, 'Erreur /predict'));
     }
   }
 
@@ -134,8 +138,8 @@ const legendMapping: Record<string, string> = {
       );
 
       setErr(null);
-    } catch (e: any) {
-      setErr(e?.message || 'Erreur /whatif');
+    } catch (e: unknown) {
+      setErr(errorMessage(e, 'Erreur /whatif'));
     }
   }
 
@@ -273,9 +277,9 @@ const legendMapping: Record<string, string> = {
       <section className="rounded-xl border p-4">
         <h2 className="font-medium mb-3">Légende des classes</h2>
         <ul className="list-disc pl-5 text-sm text-gray-700" style={{listStyleType: 'none'}}>
-          <li><b>0</b> = Bon (bonne qualité de l’air)</li>
-          <li><b>1</b> = Mauvais (mauvaise qualité de l’air)</li>
-          <li><b>2</b> = Moyen (qualité moyenne de l'air)</li>
+          <li><b>0</b> = Bon (bonne qualité de l&apos;air)</li>
+          <li><b>1</b> = Mauvais (mauvaise qualité de l&apos;air)</li>
+          <li><b>2</b> = Moyen (qualité moyenne de l&apos;air)</li>
         </ul>
       </section>
 

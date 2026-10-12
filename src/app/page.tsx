@@ -51,6 +51,21 @@ const legendMapping: Record<string, string> = {
   "2": "Moyen",
 };
 
+const variableInfo: Record<string, { name: string; description: string }> = {
+  X0: { name: 'Monoxyde de carbone', description: 'Gaz issu principalement de la combustion.' },
+  X1: { name: 'Benzène', description: 'Composé volatil présent dans certains carburants.' },
+  X2: { name: 'Indicateur chimique', description: 'Mesure chimique relevée dans l’environnement.' },
+  X3: { name: 'Température', description: 'Température au moment de la mesure.' },
+  X4: { name: 'Humidité relative', description: 'Quantité de vapeur d’eau dans l’air.' },
+  X5: { name: 'Polluant atmosphérique 1', description: 'Mesure issue des capteurs de qualité de l’air.' },
+  X6: { name: 'Polluant atmosphérique 2', description: 'Mesure complémentaire de particules ou de gaz.' },
+  X7: { name: 'Polluant atmosphérique 3', description: 'Indicateur de pollution atmosphérique.' },
+  X8: { name: 'Polluant atmosphérique 4', description: 'Mesure complémentaire provenant des capteurs.' },
+  X9: { name: 'Humidité absolue', description: 'Quantité réelle de vapeur d’eau dans l’air.' },
+  X10: { name: 'Composé organique volatil', description: 'Famille de substances présentes dans l’air.' },
+  X11: { name: 'Indicateur temporel', description: 'Information liée au moment de l’observation.' },
+};
+
 
   // -------------------- CHARGEMENT CONFIG --------------------
   useEffect(() => {
@@ -168,27 +183,34 @@ const legendMapping: Record<string, string> = {
   if (!cfg) return <main>Impossible de charger la configuration.</main>;
 
   return (
-    <main className="p-6 space-y-6">
-      <h1 className="text-2xl font-semibold">Air Quality — Simulateur causal</h1>
+    <main className="min-h-screen bg-slate-950 px-4 py-6 text-slate-100 sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-7xl space-y-6">
+      <header className="relative overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 via-blue-950 to-cyan-950 p-6 shadow-2xl sm:p-10">
+        <div className="absolute -right-24 -top-24 h-64 w-64 rounded-full bg-cyan-400/20 blur-3xl" />
+        <p className="relative text-xs font-semibold uppercase tracking-[0.25em] text-cyan-300">AirQualityUCI · analyse environnementale</p>
+        <h1 className="relative mt-3 max-w-3xl text-3xl font-bold tracking-tight text-white sm:text-5xl">Comprendre l’impact de la pollution sur l’air que nous respirons.</h1>
+        <p className="relative mt-4 max-w-2xl text-base leading-7 text-blue-100">Ajustez les paramètres, obtenez une estimation et explorez un scénario de réduction du NO₂ grâce à un modèle d’apprentissage automatique et causal.</p>
+        <div className="relative mt-6 flex flex-wrap gap-3 text-sm text-cyan-100"><span className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1">Simulation interactive</span><span className="rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-1">Données environnementales</span></div>
+      </header>
 
-      <section className="rounded-xl border border-blue-200 bg-blue-50 p-5 text-slate-800">
+      <section className="rounded-2xl border border-blue-900/60 bg-slate-900 p-5 text-slate-200 shadow-xl sm:p-7">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-3xl">
-            <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">
+            <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300">
               Comment fonctionne cette application ?
             </p>
-            <h2 className="mt-1 text-xl font-semibold text-slate-900">
+            <h2 className="mt-1 text-xl font-semibold text-white">
               Explorer l&apos;effet du NO&#8322; sur la qualit&eacute; de l&apos;air
             </h2>
-            <p className="mt-2 text-sm leading-6 text-slate-700">
+            <p className="mt-2 text-sm leading-6 text-slate-300">
               Le dashboard utilise des donn&eacute;es environnementales pour estimer une
               classe de qualit&eacute; de l&apos;air et comparer un sc&eacute;nario courant &agrave; un
               sc&eacute;nario modifi&eacute;. Les curseurs permettent de tester une situation
               sans modifier les donn&eacute;es originales.
             </p>
           </div>
-          <div className="rounded-lg border border-blue-200 bg-white px-4 py-3 text-sm text-slate-700 lg:max-w-xs">
-            <p className="font-semibold text-slate-900">Source des donn&eacute;es</p>
+          <div className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-sm text-slate-300 lg:max-w-xs">
+            <p className="font-semibold text-white">Source des donn&eacute;es</p>
             <p className="mt-1">
               AirQualityUCI, jeu de donn&eacute;es disponible sur Kaggle. Les valeurs
               affich&eacute;es ici sont des variables pr&eacute;par&eacute;es pour le mod&egrave;le.
@@ -197,30 +219,30 @@ const legendMapping: Record<string, string> = {
         </div>
 
         <div className="mt-5 grid gap-3 md:grid-cols-3">
-          <div className="rounded-lg bg-white p-4">
-            <p className="font-semibold text-slate-900">1. Contexte (W)</p>
-            <p className="mt-1 text-sm leading-5 text-slate-600">
+          <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
+            <p className="font-semibold text-white">1. Contexte (W)</p>
+            <p className="mt-1 text-sm leading-5 text-slate-300">
               Les variables X0 &agrave; X11 d&eacute;crivent le contexte environnemental de
               l&apos;observation.
             </p>
           </div>
-          <div className="rounded-lg bg-white p-4">
-            <p className="font-semibold text-slate-900">2. Traitement (T)</p>
-            <p className="mt-1 text-sm leading-5 text-slate-600">
+          <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
+            <p className="font-semibold text-white">2. Traitement (T)</p>
+            <p className="mt-1 text-sm leading-5 text-slate-300">
               Le curseur NO&#8322; repr&eacute;sente le param&egrave;tre dont on veut &eacute;tudier
               l&apos;influence.
             </p>
           </div>
-          <div className="rounded-lg bg-white p-4">
-            <p className="font-semibold text-slate-900">3. Analyse</p>
-            <p className="mt-1 text-sm leading-5 text-slate-600">
+          <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
+            <p className="font-semibold text-white">3. Analyse</p>
+            <p className="mt-1 text-sm leading-5 text-slate-300">
               <strong>Pr&eacute;dire</strong> calcule la classe et les probabilit&eacute;s.
               <strong> Simuler</strong> compare un changement de NO&#8322; au sc&eacute;nario
               courant.
             </p>
           </div>
         </div>
-        <p className="mt-4 text-xs leading-5 text-slate-600">
+        <p className="mt-4 text-xs leading-5 text-slate-400">
           Les r&eacute;sultats sont des estimations produites par le mod&egrave;le et ne
           remplacent pas une mesure officielle de la qualit&eacute; de l&apos;air.
         </p>
@@ -233,17 +255,18 @@ const legendMapping: Record<string, string> = {
       )}
 
       {/* Sliders contexte */}
-      <section className="rounded-xl border p-4">
-        <h2 className="font-medium mb-3">Contexte (W)</h2>
+      <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-xl sm:p-7">
+        <div className="mb-5 flex flex-col justify-between gap-2 sm:flex-row sm:items-end"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Les conditions observées</p><h2 className="mt-1 text-2xl font-semibold text-white">Contexte environnemental</h2></div><p className="max-w-md text-sm text-slate-400">Chaque variable est expliquée en langage simple. Les valeurs commencent sur la moyenne du jeu de données.</p></div>
         <div className="grid md:grid-cols-2 gap-3">
           {cfg.W_columns.map((k) => {
             const s = cfg.stats[k];
             const v = W[k];
             return (
-              <div key={k} className="flex flex-col">
-                <label className="text-sm mb-1">
-                  {k}{' '}
-                  <span className="text-xs text-gray-500">
+              <div key={k} className="rounded-xl border border-slate-800 bg-slate-950/70 p-4 transition hover:border-cyan-400/50">
+                <label className="mb-2 flex items-start justify-between gap-3 text-sm font-medium text-slate-200">
+                  <span><span className="block text-cyan-300">{variableInfo[k]?.name ?? k}</span><span className="mt-1 block text-xs font-normal leading-5 text-slate-400">{variableInfo[k]?.description ?? 'Variable environnementale utilisée par le modèle.'}</span></span>
+                  <span className="shrink-0 rounded-full bg-slate-800 px-2 py-1 text-xs text-slate-400">{k}</span>
+                  <span className="text-xs text-slate-500">
                     (min {s.min.toFixed(1)} | max {s.max.toFixed(1)})
                   </span>
                 </label>
@@ -257,7 +280,7 @@ const legendMapping: Record<string, string> = {
                     setW((prev) => ({ ...prev, [k]: +e.target.value }))
                   }
                 />
-                <span className="text-xs text-gray-500 mt-1">{v?.toFixed(2)}</span>
+                <span className="mt-2 text-right text-sm font-semibold text-white">{v?.toFixed(2)}</span>
               </div>
             );
           })}
@@ -265,8 +288,8 @@ const legendMapping: Record<string, string> = {
       </section>
 
       {/* Traitement NO2 */}
-      <section className="rounded-xl border p-4">
-        <h2 className="font-medium mb-3">{cfg.T_name} (traitement)</h2>
+      <section className="rounded-2xl border border-cyan-900/70 bg-gradient-to-br from-cyan-950/70 to-slate-900 p-5 shadow-xl sm:p-7">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Le paramètre que l’on fait varier</p><h2 className="mb-2 mt-1 text-2xl font-semibold text-white">Dioxyde d’azote (NO₂)</h2><p className="mb-4 max-w-2xl text-sm leading-6 text-slate-300">Le NO₂ est un polluant atmosphérique. Déplacez le curseur pour observer comment une variation de ce paramètre peut modifier l’estimation du modèle.</p>
         <div className="flex items-center gap-4">
           <input
             className="w-full"
@@ -282,10 +305,10 @@ const legendMapping: Record<string, string> = {
       </section>
 
       {/* Actions */}
-      <section className="rounded-xl border p-4 flex items-center gap-4">
+      <section className="flex flex-col items-stretch gap-4 rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-xl sm:flex-row sm:items-center sm:p-7">
         <button
           onClick={callPredict}
-          className="px-4 py-2 rounded-lg bg-blue-600 text-white"
+          className="rounded-xl bg-cyan-400 px-5 py-3 font-semibold text-slate-950 shadow-lg shadow-cyan-400/20 transition hover:bg-cyan-300"
         >
           Prédire
         </button>
@@ -305,15 +328,15 @@ const legendMapping: Record<string, string> = {
 
         <button
           onClick={callWhatIf}
-          className="px-4 py-2 rounded-lg bg-green-600 text-white"
+          className="rounded-xl bg-emerald-400 px-5 py-3 font-semibold text-slate-950 shadow-lg shadow-emerald-400/20 transition hover:bg-emerald-300"
         >
           Simuler
         </button>
       </section>
 
       {/* Résultats */}
-      <section className="rounded-xl border p-4">
-        <h2 className="font-medium mb-3">Résultat prédiction</h2>
+      <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-xl sm:p-7">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Lecture du résultat</p><h2 className="mb-4 mt-1 text-2xl font-semibold text-white">Estimation du modèle</h2>
         <div className="text-sm">
           <div>
             Qualité prédite (ŷ) :{" "}
@@ -329,8 +352,8 @@ const legendMapping: Record<string, string> = {
         </div>
       </section>
 
-      <section className="rounded-xl border p-4">
-        <h2 className="font-medium mb-3">Légende des classes</h2>
+      <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-xl sm:p-7">
+        <h2 className="mb-3 text-xl font-semibold text-white">Légende des classes</h2>
         <ul className="list-disc pl-5 text-sm text-gray-700" style={{listStyleType: 'none'}}>
           <li><b>0</b> = Bon (bonne qualité de l&apos;air)</li>
           <li><b>1</b> = Mauvais (mauvaise qualité de l&apos;air)</li>
@@ -340,8 +363,8 @@ const legendMapping: Record<string, string> = {
 
 
       {/* Graphiques */}
-      <section className="rounded-xl border p-4">
-        <h2 className="font-medium mb-3">Probabilités par classe</h2>
+      <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-xl sm:p-7">
+        <h2 className="mb-3 text-xl font-semibold text-white">Probabilités par classe</h2>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData}>
@@ -357,8 +380,8 @@ const legendMapping: Record<string, string> = {
         </div>
       </section>
 
-      <section className="rounded-xl border p-4">
-        <h2 className="font-medium mb-3">Courbes courant vs contrefactuel</h2>
+      <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-xl sm:p-7">
+        <h2 className="mb-3 text-xl font-semibold text-white">Courbes courant vs contrefactuel</h2>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
@@ -373,6 +396,7 @@ const legendMapping: Record<string, string> = {
           </ResponsiveContainer>
         </div>
       </section>
+      </div>
     </main>
   );
 }

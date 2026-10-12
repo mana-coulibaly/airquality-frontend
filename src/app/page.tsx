@@ -397,7 +397,7 @@ const classExplanations: Record<string, string> = {
           </div>
 
           <div>
-            Variation estimÃ©e pour +1 unitÃ© de NOâ‚‚ (CATE) :{' '}
+            Variation estim&eacute;e pour +1 unit&eacute; de NO&#8322; (CATE) :{' '}
             {cate !== null ? cate.toFixed(4) : '/'} / unité de NO₂
           </div>
         </div>

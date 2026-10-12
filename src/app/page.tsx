@@ -427,8 +427,15 @@ const classExplanations: Record<string, string> = {
                 {classExplanations[legendMapping[String(yHat)]] ?? 'Le modèle fournit une estimation à interpréter avec les autres indicateurs.'}
               </p>
             </div>
-            <div className="result-badge rounded-xl border border-cyan-300/30 bg-slate-900/70 px-4 py-3 text-sm">
-              Confiance du modèle : <strong>{confidence?.toFixed(1)}%</strong>
+            <div className="flex flex-wrap gap-3">
+              <div className="result-badge rounded-xl border border-cyan-300/30 bg-slate-900/70 px-4 py-3 text-sm">
+                {resultMode === 'simulation' ? 'Confiance — courant' : 'Confiance du modèle'} : <strong>{confidence?.toFixed(1)}%</strong>
+              </div>
+              {resultMode === 'simulation' && (
+                <div className="result-badge result-badge-counterfactual rounded-xl border border-orange-300/50 bg-orange-950/40 px-4 py-3 text-sm">
+                  Confiance — contrefactuel : <strong>{counterfactualConfidence?.toFixed(1)}%</strong>
+                </div>
+              )}
             </div>
           </div>
           {resultMode === 'simulation' && counterfactualClass !== null && (

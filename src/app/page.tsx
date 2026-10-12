@@ -39,6 +39,8 @@ export default function Home() {
   const [probaCf, setProbaCf] = useState<number[] | null>(null);
   const [cate, setCate] = useState<number | null>(null);
   const [yHat, setYHat] = useState<number | null>(null);
+  const [resultMode, setResultMode] = useState<'prediction' | 'simulation' | null>(null);
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
   // Erreurs réseau
   const [err, setErr] = useState<string | null>(null);
@@ -51,7 +53,7 @@ const legendMapping: Record<string, string> = {
   "2": "Moyen",
 };
 
-const variableInfo: Record<string, { name: string; description: string }> = {
+  const variableInfo: Record<string, { name: string; description: string }> = {
   X0: { name: 'Monoxyde de carbone', description: 'Gaz issu principalement de la combustion.' },
   X1: { name: 'Benzène', description: 'Composé volatil présent dans certains carburants.' },
   X2: { name: 'Indicateur chimique', description: 'Mesure chimique relevée dans l’environnement.' },
@@ -64,6 +66,12 @@ const variableInfo: Record<string, { name: string; description: string }> = {
   X9: { name: 'Humidité absolue', description: 'Quantité réelle de vapeur d’eau dans l’air.' },
   X10: { name: 'Composé organique volatil', description: 'Famille de substances présentes dans l’air.' },
   X11: { name: 'Indicateur temporel', description: 'Information liée au moment de l’observation.' },
+};
+
+const classExplanations: Record<string, string> = {
+  Bon: 'Le modèle estime que les conditions observées correspondent à une qualité de l’air favorable.',
+  Mauvais: 'Le modèle détecte un niveau de pollution préoccupant dans les conditions observées.',
+  Moyen: 'Le modèle estime une situation intermédiaire : certains indicateurs restent acceptables, mais une vigilance est recommandée.',
 };
 
 
@@ -98,6 +106,19 @@ const variableInfo: Record<string, { name: string; description: string }> = {
     };
   }, []);
 
+  useEffect(() => {
+    const savedTheme = window.localStorage.getItem('air-quality-theme');
+    if (savedTheme === 'light' || savedTheme === 'dark') setTheme(savedTheme);
+  }, []);
+
+  function toggleTheme() {
+    setTheme((current) => {
+      const next = current === 'dark' ? 'light' : 'dark';
+      window.localStorage.setItem('air-quality-theme', next);
+      return next;
+    });
+  }
+
   // -------------------- ACTIONS --------------------
   async function callPredict() {
     if (!cfg) return;
@@ -119,6 +140,8 @@ const variableInfo: Record<string, { name: string; description: string }> = {
           ? data.proba.indexOf(Math.max(...data.proba))
           : null
       );
+      setProbaCf(null);
+      setResultMode('prediction');
       setErr(null);
     } catch (e: unknown) {
       setErr(errorMessage(e, 'Erreur /predict'));
@@ -151,6 +174,12 @@ const variableInfo: Record<string, { name: string; description: string }> = {
           ? data.counterfactual.proba
           : null
       );
+      setYHat(
+        Array.isArray(data.current?.proba)
+          ? data.current.proba.indexOf(Math.max(...data.current.proba))
+          : null
+      );
+      setResultMode('simulation');
 
       setErr(null);
     } catch (e: unknown) {
@@ -159,7 +188,14 @@ const variableInfo: Record<string, { name: string; description: string }> = {
   }
 
   // -------------------- DERIVÉS (memo) --------------------
-  const labels = cfg?.class_labels ?? ['0', '1', '2'];
+  const labels = useMemo(() => cfg?.class_labels ?? ['0', '1', '2'], [cfg?.class_labels]);
+  const confidence = probaCur ? Math.max(...probaCur) * 100 : null;
+  const counterfactualClass = probaCf
+    ? probaCf.indexOf(Math.max(...probaCf))
+    : null;
+  const counterfactualConfidence = probaCf
+    ? Math.max(...probaCf) * 100
+    : null;
   const chartData = useMemo(() => {
     // ⚠ retourne toujours une valeur (jamais de hook conditionnel)
     const cur = probaCur ?? [];
@@ -183,10 +219,25 @@ const variableInfo: Record<string, { name: string; description: string }> = {
   if (!cfg) return <main>Impossible de charger la configuration.</main>;
 
   return (
-    <main className="min-h-screen bg-slate-950 px-4 py-6 text-slate-100 sm:px-6 lg:px-10">
+    <main className={`${theme === 'light' ? 'theme-light' : 'theme-dark'} min-h-screen bg-slate-950 px-4 py-6 text-slate-100 sm:px-6 lg:px-10`}>
       <div className="mx-auto max-w-7xl space-y-6">
       <header className="relative overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 via-blue-950 to-cyan-950 p-6 shadow-2xl sm:p-10">
         <div className="absolute -right-24 -top-24 h-64 w-64 rounded-full bg-cyan-400/20 blur-3xl" />
+        <div className="relative mb-4 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-300/30 bg-cyan-300/10 p-2 shadow-lg shadow-cyan-950/40">
+            <svg viewBox="0 0 64 64" aria-hidden="true" className="h-full w-full">
+              <circle cx="32" cy="32" r="23" fill="#22d3ee" opacity=".18" />
+              <path d="M17 43 27 21h7l11 22h-7l-2.2-5H26l-2 5Zm11-11h5l-2.5-6Z" fill="#ecfeff" />
+              <path d="M14 49c6-4 12-5 18-3 7 2 12 1 18-3" fill="none" stroke="#67e8f9" strokeLinecap="round" strokeWidth="3" />
+            </svg>
+          </div>
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-white">Air Quality Analysis</p>
+          </div>
+          <button type="button" onClick={toggleTheme} className="theme-toggle rounded-full border border-cyan-200/30 bg-white/10 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/20" aria-label="Changer de thème">
+            {theme === 'dark' ? '☀️ Thème clair' : '🌙 Thème sombre'}
+          </button>
+        </div>
         <p className="relative text-xs font-semibold uppercase tracking-[0.25em] text-cyan-300">AirQualityUCI · analyse environnementale</p>
         <h1 className="relative mt-3 max-w-3xl text-3xl font-bold tracking-tight text-white sm:text-5xl">Comprendre l’impact de la pollution sur l’air que nous respirons.</h1>
         <p className="relative mt-4 max-w-2xl text-base leading-7 text-blue-100">Ajustez les paramètres, obtenez une estimation et explorez un scénario de réduction du NO₂ grâce à un modèle d’apprentissage automatique et causal.</p>
@@ -362,6 +413,34 @@ const variableInfo: Record<string, { name: string; description: string }> = {
       </section>
 
 
+      {resultMode && yHat !== null && (
+        <section className="result-explanation rounded-2xl border border-cyan-400/30 bg-cyan-950/40 p-5 shadow-xl sm:p-7">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">
+            {resultMode === 'prediction' ? 'Interprétation de la prédiction' : 'Interprétation de la simulation'}
+          </p>
+          <div className="mt-1 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-white">
+                Résultat principal : {legendMapping[String(yHat)] ?? yHat}
+              </h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
+                {classExplanations[legendMapping[String(yHat)]] ?? 'Le modèle fournit une estimation à interpréter avec les autres indicateurs.'}
+              </p>
+            </div>
+            <div className="result-badge rounded-xl border border-cyan-300/30 bg-slate-900/70 px-4 py-3 text-sm">
+              Confiance du modèle : <strong>{confidence?.toFixed(1)}%</strong>
+            </div>
+          </div>
+          {resultMode === 'simulation' && counterfactualClass !== null && (
+            <p className="mt-4 border-t border-cyan-300/20 pt-4 text-sm leading-6 text-slate-300">
+              Avec le scénario contrefactuel de <strong>{whatIfPct}%</strong> sur le NO₂, la classe estimée devient{' '}
+              <strong>{legendMapping[String(counterfactualClass)] ?? counterfactualClass}</strong> avec une confiance de{' '}
+              <strong>{counterfactualConfidence?.toFixed(1)}%</strong>. Cette comparaison indique une tendance du modèle, et non une mesure réelle.
+            </p>
+          )}
+        </section>
+      )}
+
       {/* Graphiques */}
       <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-xl sm:p-7">
         <h2 className="mb-3 text-xl font-semibold text-white">Probabilités par classe</h2>
@@ -373,8 +452,8 @@ const variableInfo: Record<string, { name: string; description: string }> = {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey="courant" name="Courant" />
-              <Bar dataKey="contrefactuel" name="Contrefactuel" />
+              <Bar dataKey="courant" name="Courant" fill="#22d3ee" />
+              <Bar dataKey="contrefactuel" name="Contrefactuel" fill="#fb923c" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -390,8 +469,8 @@ const variableInfo: Record<string, { name: string; description: string }> = {
               <YAxis domain={[0, 1]} />
               <Tooltip />
               <Legend />
-              <Line type="monotone" dataKey="courant" name="Courant" />
-              <Line type="monotone" dataKey="contrefactuel" name="Contrefactuel" />
+              <Line type="monotone" dataKey="courant" name="Courant" stroke="#22d3ee" strokeWidth={3} dot={{ fill: '#22d3ee', r: 4 }} />
+              <Line type="monotone" dataKey="contrefactuel" name="Contrefactuel" stroke="#fb923c" strokeWidth={3} strokeDasharray="6 4" dot={{ fill: '#fb923c', r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>

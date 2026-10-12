@@ -397,7 +397,7 @@ const classExplanations: Record<string, string> = {
           </div>
 
           <div>
-            Effet causal marginal (CATE) :{' '}
+            Variation estimÃ©e pour +1 unitÃ© de NOâ‚‚ (CATE) :{' '}
             {cate !== null ? cate.toFixed(4) : '/'} / unité de NO₂
           </div>
         </div>
@@ -481,6 +481,32 @@ const classExplanations: Record<string, string> = {
             </LineChart>
           </ResponsiveContainer>
         </div>
+      </section>
+      <section className="rounded-2xl border border-cyan-300/30 bg-slate-900 p-5 shadow-xl sm:p-7">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Comprendre les deux scenarios</p>
+        <div className="mt-3 grid gap-3 md:grid-cols-2">
+          <div className="rounded-xl border border-cyan-300/30 bg-cyan-950/30 p-4">
+            <h2 className="font-semibold text-cyan-100">Courant = la situation de depart</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-300">
+              Le modele regarde toutes les valeurs que vous avez saisies. Sa confiance indique
+              a quel point il est sur de la classe estimee pour cette situation.
+            </p>
+          </div>
+          <div className="rounded-xl border border-orange-300/50 bg-orange-950/30 p-4">
+            <h2 className="font-semibold text-orange-100">Contrefactuel = une experience virtuelle</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-300">
+              Le modele reprend les memes donnees, mais change seulement le NO2 selon le
+              pourcentage choisi. La difference entre les deux blocs montre l&apos;effet de ce changement.
+            </p>
+          </div>
+        </div>
+        <p className="mt-4 border-t border-cyan-300/20 pt-4 text-sm leading-6 text-slate-300">
+          Le CATE mesure la variation estimee pour une unite supplementaire de NO2 dans la
+          situation actuelle. Si sa valeur est 0.0000, cela signifie que le modele garde le
+          meme score entre cette valeur et la suivante. Le modele fonctionne par paliers :
+          une variation plus importante peut donc produire un effet, meme si une seule unite
+          ne change rien.
+        </p>
       </section>
       </div>
     </main>

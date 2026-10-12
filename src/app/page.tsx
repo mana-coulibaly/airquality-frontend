@@ -16,7 +16,7 @@ type Config = {
 };
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || 'http://127.0.0.1:8000';
+  process.env.NEXT_PUBLIC_API_BASE || 'https://airquality-app.onrender.com';
 
 type PredictPayload = { W: Record<string, number>; T: number };
 

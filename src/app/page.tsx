@@ -171,6 +171,61 @@ const legendMapping: Record<string, string> = {
     <main className="p-6 space-y-6">
       <h1 className="text-2xl font-semibold">Air Quality — Simulateur causal</h1>
 
+      <section className="rounded-xl border border-blue-200 bg-blue-50 p-5 text-slate-800">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-3xl">
+            <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">
+              Comment fonctionne cette application ?
+            </p>
+            <h2 className="mt-1 text-xl font-semibold text-slate-900">
+              Explorer l&apos;effet du NO&#8322; sur la qualit&eacute; de l&apos;air
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-700">
+              Le dashboard utilise des donn&eacute;es environnementales pour estimer une
+              classe de qualit&eacute; de l&apos;air et comparer un sc&eacute;nario courant &agrave; un
+              sc&eacute;nario modifi&eacute;. Les curseurs permettent de tester une situation
+              sans modifier les donn&eacute;es originales.
+            </p>
+          </div>
+          <div className="rounded-lg border border-blue-200 bg-white px-4 py-3 text-sm text-slate-700 lg:max-w-xs">
+            <p className="font-semibold text-slate-900">Source des donn&eacute;es</p>
+            <p className="mt-1">
+              AirQualityUCI, jeu de donn&eacute;es disponible sur Kaggle. Les valeurs
+              affich&eacute;es ici sont des variables pr&eacute;par&eacute;es pour le mod&egrave;le.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-3">
+          <div className="rounded-lg bg-white p-4">
+            <p className="font-semibold text-slate-900">1. Contexte (W)</p>
+            <p className="mt-1 text-sm leading-5 text-slate-600">
+              Les variables X0 &agrave; X11 d&eacute;crivent le contexte environnemental de
+              l&apos;observation.
+            </p>
+          </div>
+          <div className="rounded-lg bg-white p-4">
+            <p className="font-semibold text-slate-900">2. Traitement (T)</p>
+            <p className="mt-1 text-sm leading-5 text-slate-600">
+              Le curseur NO&#8322; repr&eacute;sente le param&egrave;tre dont on veut &eacute;tudier
+              l&apos;influence.
+            </p>
+          </div>
+          <div className="rounded-lg bg-white p-4">
+            <p className="font-semibold text-slate-900">3. Analyse</p>
+            <p className="mt-1 text-sm leading-5 text-slate-600">
+              <strong>Pr&eacute;dire</strong> calcule la classe et les probabilit&eacute;s.
+              <strong> Simuler</strong> compare un changement de NO&#8322; au sc&eacute;nario
+              courant.
+            </p>
+          </div>
+        </div>
+        <p className="mt-4 text-xs leading-5 text-slate-600">
+          Les r&eacute;sultats sont des estimations produites par le mod&egrave;le et ne
+          remplacent pas une mesure officielle de la qualit&eacute; de l&apos;air.
+        </p>
+      </section>
+
       {err && (
         <div className="rounded border border-red-300 bg-red-50 text-red-700 p-3">
           {err}
